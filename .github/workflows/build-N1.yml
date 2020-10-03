@@ -33,15 +33,15 @@ jobs:
         sudo timedatectl set-timezone "$TZ"
     - name: Show Disk Space
       run: |
-      df -hT $PWD
+        df -hT $PWD
     - name: SSH Connection To Actions
       uses: P3TERX/debugger-action@master
       if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
     - name: Download Tools
       run: |
-      env
-      tools/download-tool
+        env
+        tools/download-tool
     - name: Make Image
       run: |
-      env
-      make image
+        env
+        make image
