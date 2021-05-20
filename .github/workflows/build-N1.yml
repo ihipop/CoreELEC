@@ -5,7 +5,6 @@ on:
       - test
 
 env:
-  REPO_BRANCH: test
   TZ: Asia/Shanghai
   DEBIAN_FRONTEND: noninteractive
   SSH_ACTIONS: false
