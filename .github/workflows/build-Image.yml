@@ -65,7 +65,8 @@ jobs:
       run: |
         # export THREADCOUNT=100%
         env
-        make image || THREADCOUNT=1 make image ||  THREADCOUNT=1 make image V=s
+        make image 
+        #|| (echo '=======ERROR===============' && THREADCOUNT=1 make image) ||  THREADCOUNT=1 make image V=s
         echo "::set-output name=status::success"
     - name: Upload ARTIFACT
       uses: actions/upload-artifact@v2
