@@ -1,0 +1,92 @@
+name: Build N1 Coreelec and Addon
+on: workflow_dispatch
+inputs:
+  device:
+    description: "需要编译的Device，如 Phicomm-N1"
+    required: true
+  custom-version:
+    description: "自定义版本号，不写使用提交Hash"
+  upload-cowtransfer:
+    description: "是否上传奶牛"
+    default: true
+  upload-artifact:
+    description: "是否上传构建产物"
+    default: false
+
+env:
+  TZ: Asia/Shanghai
+  DEBIAN_FRONTEND: noninteractive
+  SSH_ACTIONS: false
+  PROJECT: Amlogic
+  ARCH: arm
+  DEVICE: ${{ input.device }}
+  CUSTOM_VERSION: ${{ input.custom-version }}
+  UPLOAD_COWTRANSFER: ${{ input.upload-cowtransfer }}
+jobs:
+  make-image:
+    name: Build Image
+    runs-on: ubuntu-20.04
+    if: github.event.repository.owner.id == github.event.sender.id
+    
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+    - name: Initialization Environment
+      run: |
+        git branch -v
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/share/man
+        sudo -E apt-get -qq update
+        sudo -E apt-get install gcc make git unzip wget xz-utils bc gperf zip unzip g++ java build-essential patchutils lzop xfonts-utils xsltproc libjson-perl cmake textinfo 
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        sudo chown $USER:$GROUPS $GITHUB_WORKSPACE
+    - name: Show Disk Space
+      run: |
+        df -hT
+    - name: SSH connection to Actions
+      uses: P3TERX/ssh2actions@v1.0.0
+      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+      env:
+
+    - name: Download Tools
+      run: |
+        env
+        tools/download-tool || tools/download-tool
+      if: false
+    - name: Make Image
+      id: compile
+      if: (!cancelled())
+      run: |
+        # export THREADCOUNT=100%
+        env
+        make image || THREADCOUNT=1 make image ||  THREADCOUNT=1 make image V=s
+        echo "::set-output name=status::success"
+    - name: Upload ARTIFACT
+      uses: actions/upload-artifact@v2
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_ARTIFACT == 'true'
+      with:
+        name: CoreELEC-${{ env.DEVICE }}_$(date +"%Y%m%d%H%M")"
+        path: |
+          target/CoreELEC-*.img.gz
+          target/CoreELEC-*.img.gz.sha*
+          target/CoreELEC-*.tar
+          target/CoreELEC-*.tar.sha*
+        retention-days: 5
+
+    - name: Upload firmware to cowtransfer
+      id: cowtransfer
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer cow --block 2621440 -s -p 64 --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
+        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+        echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Delete workflow runs
+      uses: GitRML/delete-workflow-runs@main
+      with:
+        retain_days: 5
+        keep_minimum_runs: 5
