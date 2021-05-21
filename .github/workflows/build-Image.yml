@@ -25,15 +25,13 @@ env:
   SSH_ACTIONS: false
   PROJECT: Amlogic
   ARCH: arm
-  DEVICE: ${{ input.device }}
-  CUSTOM_VERSION: ${{ input.custom-version }}
-  UPLOAD_COWTRANSFER: ${{ input.upload-cowtransfer }}
+  DEVICE: ${{ github.event.inputs.device }}
+  CUSTOM_VERSION: ${{ github.event.inputs.custom-version }}
+  UPLOAD_COWTRANSFER: ${{ github.event.inputs.upload-cowtransfer }}
 jobs:
   make-image:
     name: Build Image
-    runs-on: ubuntu-20.04
-    if: github.event.repository.owner.id == github.event.sender.id
-    
+    runs-on: ubuntu-20.04    
     steps:
     - name: checkout
       uses: actions/checkout@v2
