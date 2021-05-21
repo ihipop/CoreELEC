@@ -25,15 +25,13 @@ env:
   SSH_ACTIONS: false
   PROJECT: Amlogic
   ARCH: arm
-  DEVICE: ${{ input.device }}
-  CUSTOM_VERSION: ${{ input.custom-version }}
-  UPLOAD_COWTRANSFER: ${{ input.upload-cowtransfer }}
+  DEVICE: ${{ github.event.inputs.device }}
+  CUSTOM_VERSION: ${{ github.event.inputs.custom-version }}
+  UPLOAD_COWTRANSFER: ${{ github.event.inputs.upload-cowtransfer }}
 jobs:
   make-image:
     name: Build Image
-    runs-on: ubuntu-20.04
-    if: github.event.repository.owner.id == github.event.sender.id
-    
+    runs-on: ubuntu-20.04    
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -45,7 +43,7 @@ jobs:
         git branch -v
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/share/man
         sudo -E apt-get -qq update
-        sudo -E apt-get install gcc make git unzip wget xz-utils bc gperf zip unzip g++ java build-essential patchutils lzop xfonts-utils xsltproc libjson-perl cmake textinfo 
+        sudo -E apt-get install gcc make git unzip wget xz-utils bc gperf zip unzip g++  build-essential patchutils lzop xfonts-utils xsltproc libjson-perl cmake texinfo default-jre
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
         sudo timedatectl set-timezone "$TZ"
@@ -56,8 +54,6 @@ jobs:
     - name: SSH connection to Actions
       uses: P3TERX/ssh2actions@v1.0.0
       if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
-      env:
-
     - name: Download Tools
       run: |
         env
